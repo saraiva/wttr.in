@@ -67,7 +67,7 @@ def load_translations():
                 trans = trans.strip()
                 orig = orig.strip()
 
-                translation[orig] = trans
+                translation[orig.lower()] = trans
         translations[lang] = translation
     return translations
 TRANSLATIONS = load_translations()
@@ -126,11 +126,17 @@ def _save_content_and_headers(path, query, content, headers):
 
 def translate(text, lang):
     """
-    Translate `text` into `lang`
+    Translate `text` into `lang`.
+    If `text` is comma-separated, translate each term independently.
+    If no translation found, leave it untouched.
     """
-    translated = TRANSLATIONS.get(lang, {}).get(text, text)
-    if text == translated:
-        print("%s: %s" % (lang, text))
+
+    if "," in text:
+        terms = text.split(",")
+        translated_terms = [translate(term.strip(), lang) for term in terms]
+        return ", ".join(translated_terms)
+
+    translated = TRANSLATIONS.get(lang, {}).get(text.lower(), text)
     return translated
 
 def cyr(to_translate):
@@ -268,7 +274,7 @@ def proxy(path):
         # WWO tweaks
         query_string += "&extra=localObsTime"
         query_string += "&includelocation=yes"
-        content, headers = _fetch_content_and_headers(path, query)
+        content, headers = _fetch_content_and_headers(path, query_string)
 
     content = add_translations(content, lang)
 
